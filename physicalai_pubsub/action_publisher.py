@@ -57,31 +57,32 @@ class RobotActionPublisher(Node):
         self.get_logger().info(f'Published trajectory command: {positions}')
 
 def main():
-    """
-    Execute a sequence of movements:
-    1. Initial position (0.0)
-    2. Intermediate position
-    3. Return to initial position
-    """
     rclpy.init()
     robot_action_publisher = RobotActionPublisher()
-    
+
     try:
-        # Move to initial position
-        robot_action_publisher.move_to_position([0.0, 0.0, 0.0, 0.0])
-        time.sleep(3.0)  # Wait for movement to complete
-        
-        # Move to a different position
-        robot_action_publisher.move_to_position([0.5, 0.3, -0.2, 0.1])
-        time.sleep(3.0)
-        
-        # Return to initial position
-        robot_action_publisher.move_to_position([0.0, 0.0, 0.0, 0.0])
-        time.sleep(3.0)  # Wait for final movement to complete
-        
-        robot_action_publisher.get_logger().info('All movements completed. Exiting...')
+        # [j1(turn around), j2(shoulder), j3(elbow), j4(wrist)] rad
+        waypoints = [
+            ([0.0, 0.0, 0.0, 0.0], "home posture"),
+            ([0.8, 0.0, 0.0, 0.0], "turn right"),
+            ([0.8, -0.6, 0.8, 0.3], "drop an objective above "),
+            ([0.8, -0.3, 0.5, -0.5], "close wrist"),
+            ([-0.8, -0.3, 0.5, -0.5], "carry toward left"),
+            ([-0.8, 0.0, 0.0, 0.3], "put an objective"),
+            ([0.0, 0.0, 0.0, 0.0], "go back home"),
+        ]
+
+        for loop in range(2):
+            for positions, label in waypoints:
+                robot_action_publisher.get_logger().info(f'->{label}: {positions}')
+                robot_action_publisher.move_to_position(positions)
+                time.sleep(5.0)#wait for finishing movements
+
+
+        robot_action_publisher.get_logger().info('finished all movements. end up...')
+
     except KeyboardInterrupt:
-        robot_action_publisher.get_logger().info('Movement interrupted by user')
+        robot_action_publisher.get_logger().info('interruptted by user')
     finally:
         robot_action_publisher.destroy_node()
         rclpy.shutdown()
